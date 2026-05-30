@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+    <g transform="translate(0 .252)">
+        <circle cx="8" cy="8" r="8" fill="#707070" transform="translate(0 -.252)"/>
+        <path fill="#f5f4f4" d="M4 0l4 7H0z" transform="rotate(90 3.954 7.955)"/>
+    </g>
+</svg>

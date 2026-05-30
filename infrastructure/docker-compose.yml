@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: fuelup-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: securepassword123
+      POSTGRES_DB: fuelup_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # Redis caching & background queues
+  redis:
+    image: redis:7-alpine
+    container_name: fuelup-redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  # FastAPI Backend API Server
+  backend:
+    build:
+      context: ../
+      dockerfile: apps/backend/Dockerfile
+    container_name: fuelup-backend
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql://postgres:securepassword123@db:5432/fuelup_db
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=prod-secret-key-change-in-production-1234
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+
+  # Next.js Web Application
+  web:
+    build:
+      context: ../
+      dockerfile: apps/web/Dockerfile
+    container_name: fuelup-web
+    restart: always
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

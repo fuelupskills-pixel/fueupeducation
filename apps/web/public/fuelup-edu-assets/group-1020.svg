@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+    <defs>
+        <style>
+            .cls-2{fill:none;stroke:#3b0e8a}
+        </style>
+    </defs>
+    <g id="Group_1020" transform="translate(-212 -432)">
+        <circle id="Ellipse_384" cx="12" cy="12" r="12" fill="#fff" transform="translate(212 432)"/>
+        <g id="Group_1019">
+            <path id="Line_98" d="M0 0L0 12" class="cls-2" transform="translate(224 438)"/>
+            <path id="Line_99" d="M0 0L12 0" class="cls-2" transform="translate(218 444)"/>
+        </g>
+    </g>
+</svg>

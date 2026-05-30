@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="27" height="31" viewBox="0 0 27 31">
+    <g transform="translate(-946 -483)">
+        <circle cx="13.5" cy="13.5" r="13.5" fill="#d1ced8" transform="translate(946 487)"/>
+        <text fill="#fff" font-family="HelveticaNeue, Helvetica Neue" font-size="25px" transform="translate(952 483)">
+            <tspan x="0" y="24">+</tspan>
+        </text>
+    </g>
+</svg>

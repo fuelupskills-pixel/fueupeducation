@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3" height="13" viewBox="0 0 3 13">
+    <defs>
+        <style>
+            .cls-1{fill:#fff}
+        </style>
+    </defs>
+    <g id="Group_1018" transform="translate(-63 -209)">
+        <circle id="Ellipse_381" cx="1.5" cy="1.5" r="1.5" class="cls-1" transform="translate(63 209)"/>
+        <circle id="Ellipse_382" cx="1.5" cy="1.5" r="1.5" class="cls-1" transform="translate(63 214)"/>
+        <circle id="Ellipse_383" cx="1.5" cy="1.5" r="1.5" class="cls-1" transform="translate(63 219)"/>
+    </g>
+</svg>

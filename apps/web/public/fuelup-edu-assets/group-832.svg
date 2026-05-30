@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14.829" viewBox="0 0 14 14.829">
+    <defs>
+        <style>
+            .cls-1{fill:none;stroke:#fff;stroke-linecap:round;stroke-linejoin:round;stroke-width:2px}
+        </style>
+    </defs>
+    <g id="Group_832" transform="translate(-1135 -813.59)">
+        <g id="Group_830" transform="translate(-99 2.748)">
+            <g id="Icon_feather-arrow-up" transform="rotate(90 217.371 1029.629)">
+                <path id="Path_635" d="M0 12V0" class="cls-1" transform="translate(6)"/>
+                <path id="Path_636" d="M0 6l6-6 6 6" class="cls-1"/>
+            </g>
+        </g>
+    </g>
+</svg>
