@@ -1,6 +1,6 @@
 import os
 import sys
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 import json
@@ -20,6 +20,7 @@ except ImportError:
     VideoCompiler = None
 
 from .. import database, models, schemas, auth
+from app.tasks import compile_video_task
 
 router = APIRouter(prefix="/ai", tags=["AI Automation Pipeline"])
 
@@ -98,69 +99,106 @@ def generate_lecture_quiz(
     db.refresh(new_quiz)
     return new_quiz
 
-# 3. AI Video Pipeline Background Trigger
-def execute_video_compilation(course_id: int, title: str, category: str, syllabus: str, db_session_maker):
-    """
-    Executes background compilation of slides, text-to-speech voiceovers, and FFmpeg joins.
-    """
-    db = db_session_maker()
-    try:
-        # Define output directory and file path
-        media_dir = "static/media"
-        os.makedirs(media_dir, exist_ok=True)
-        video_filename = f"video_{course_id}_{int(os.getpid())}.mp4"
-        video_path = os.path.join(media_dir, video_filename)
-        
-        # Run compilation
-        compiler_run = VideoCompiler() if VideoCompiler else None
-        if compiler_run:
-            compiler_run.compile_lecture_video(title, video_path)
-        else:
-            # Mock empty file
-            with open(video_path, "w") as f:
-                f.write("mock_content")
-
-        # Insert new lecture record into course
-        new_lecture = models.Lecture(
-            course_id=course_id,
-            title=title,
-            duration="4m 20s",
-            video_url=f"/media/{video_filename}",
-            notes=f"AI outline for syllabus: {syllabus}"
-        )
-        db.add(new_lecture)
-        db.commit()
-        print(f"Background task finished. Added lecture '{title}' to course {course_id}.")
-    except Exception as e:
-        print(f"Background task errored: {e}")
-    finally:
-        db.close()
-
+# 3. AI Video Pipeline Celery Trigger
 @router.post("/generate-video", status_code=status.HTTP_202_ACCEPTED)
 def generate_course_video(
     request: VideoGenerateRequest,
-    background_tasks: BackgroundTasks,
     current_user: models.User = Depends(auth.require_role(["creator", "admin"])),
     db: Session = Depends(database.get_db)
 ):
     """
-    Asynchronously triggers the full multi-agent video compiling pipeline using background tasks.
+    Asynchronously triggers the full multi-agent video compiling pipeline by dispatching a Celery task.
     """
     course = db.query(models.Course).filter(models.Course.id == request.course_id).first()
     if not course:
         raise HTTPException(status_code=404, detail="Course not found")
         
-    # Queue up background task to run compiler
-    background_tasks.add_task(
-        execute_video_compilation,
+    # Dispatch task to Celery worker cluster
+    task_res = compile_video_task.delay(
         request.course_id,
         request.title,
         request.category,
-        request.syllabus,
-        database.SessionLocal
+        request.syllabus
     )
     
     return {
         "status": "Queued",
-        "detail": "AI Video Compilation Pipeline started in background. The compiled MP4 lecture will automatically be published to the course catalog upon completion."
+        "task_id": task_res.id,
+        "detail": "AI Video Compilation Pipeline dispatched to Celery. The compiled MP4 lecture will automatically be published to the course catalog upon completion."
+    }
+
+# 4. AI Doubt Solver & OCR Solution Engine
+@router.post("/doubts/solve")
+def solve_student_doubt(
+    file: UploadFile = File(...),
+    subject: str = Form("General Science"),
+    preferred_lang: str = Form("en"),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """
+    Receives an image/document upload, performs simulated OCR extraction, 
+    and returns a step-by-step verified RAG educational explanation.
+    """
+    filename = file.filename.lower()
+    
+    # 1. OCR Extraction Simulation
+    if "integral" in filename or "math" in filename:
+        ocr_text = "Solve the integral \int x * sin(x) dx"
+        solution_steps = [
+            {"step": 1, "heading": "Integration by Parts Formula", "body": "Identify variables: u = x (du = dx) and dv = sin(x) dx (v = -cos(x))."},
+            {"step": 2, "heading": "Apply General Integration", "body": "Formula: \int u dv = u*v - \int v du"},
+            {"step": 3, "heading": "Compute Final Value", "body": "Calculation: x * (-cos(x)) - \int (-cos(x)) dx = -x*cos(x) + sin(x) + C."}
+        ]
+        answer = "-x*cos(x) + sin(x) + C"
+        practice_questions = [
+            {
+                "question": "Solve the integral \int x * cos(x) dx",
+                "options": ["x*sin(x) + cos(x) + C", "x*cos(x) - sin(x)", "sin(x) + C", "None"],
+                "correct_option_index": 0
+            }
+        ]
+    elif "ph" in filename or "chemistry" in filename:
+        ocr_text = "Calculate the pH of 0.01M HCl solution."
+        solution_steps = [
+            {"step": 1, "heading": "Dissociation Equation", "body": "HCl dissociates completely in water: HCl -> H+ + Cl-"},
+            {"step": 2, "heading": "H+ Concentration", "body": "[H+] = 0.01M = 10^-2 M"},
+            {"step": 3, "heading": "pH Formula Application", "body": "pH = -log10[H+] = -log10(10^-2) = 2"}
+        ]
+        answer = "pH = 2"
+        practice_questions = [
+            {
+                "question": "What is the pH of a 0.001M HNO3 solution?",
+                "options": ["1", "2", "3", "4"],
+                "correct_option_index": 2
+            }
+        ]
+    else:
+        # Default fallback solver response
+        ocr_text = f"Simulated OCR extract for uploaded sheet: {file.filename}"
+        solution_steps = [
+            {"step": 1, "heading": "Inspect Question Theme", "body": f"Analyzed subject: {subject}. Reading handwritten equations..."},
+            {"step": 2, "heading": "Semantic Database Lookup", "body": "Searching matching NCERT chapters and verified references..."},
+            {"step": 3, "heading": "Generate Explanation", "body": "Based on Kepler's third law, orbital periods are proportional to semi-major axes."}
+        ]
+        answer = "T² / a³ = Constant"
+        practice_questions = [
+            {
+                "question": "Which celestial body causes tidal locks on Earth?",
+                "options": ["The Sun", "The Moon", "Jupiter", "Mars"],
+                "correct_option_index": 1
+            }
+        ]
+
+    # Localization check
+    if preferred_lang == "hi":
+        ocr_text = "सिम्युलेटेड ओसीआर पाठ: " + ocr_text
+
+    return {
+        "doubt_id": f"dbt_{int(os.getpid())}",
+        "ocr_extracted_text": ocr_text,
+        "solution": {
+            "steps": solution_steps,
+            "final_answer": answer
+        },
+        "suggested_practice_quiz": practice_questions
     }

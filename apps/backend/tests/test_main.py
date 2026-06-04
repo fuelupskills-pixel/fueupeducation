@@ -17,8 +17,9 @@ os.environ["DATABASE_URL"] = "sqlite:///./test_fuelup.db"
 from app.database import Base, get_db
 from app.main import app
 
-# Create tables in memory
+# Create and clean tables
 from app.database import engine
+Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
 
 client = TestClient(app)

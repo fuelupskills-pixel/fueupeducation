@@ -5,8 +5,14 @@ import { useRouter } from 'next/navigation';
 import { 
   Play, BookOpen, Clock, Tv, Shield, ArrowLeft, Send, CheckCircle2,
   Video, Monitor, Square, ChevronRight, ChevronLeft, FileText, CheckSquare, Award,
-  Bot, Globe, RotateCcw, AlertTriangle, Printer, ExternalLink, Volume2
+  Bot, Globe, RotateCcw, AlertTriangle, Printer, ExternalLink, Volume2, HelpCircle
 } from 'lucide-react';
+
+import FlashcardContainer from '../../components/student/FlashcardContainer';
+import FormulaSheetDrawer from '../../components/student/FormulaSheetDrawer';
+import CertificateModal from '../../components/student/CertificateModal';
+import DoubtSolver from '../../components/student/DoubtSolver';
+import { API_URL } from '../config';
 
 // --- Multilingual Translation Database ---
 const langMap = {
@@ -549,7 +555,7 @@ export default function StudentDashboard() {
     }
 
     // Verify token with backend
-    fetch('http://127.0.0.1:8000/api/auth/me', {
+    fetch(`${API_URL}/api/auth/me`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -677,7 +683,7 @@ export default function StudentDashboard() {
 
     try {
       const token = localStorage.getItem('fuelup_token');
-      const response = await fetch('http://127.0.0.1:8000/api/ai/chat', {
+      const response = await fetch(`${API_URL}/api/ai/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -907,6 +913,7 @@ export default function StudentDashboard() {
                 { id: 'modules', label: t.studyModules, icon: <FileText className="w-4 h-4" /> },
                 { id: 'exams', label: t.examCenter, icon: <Award className="w-4 h-4" /> },
                 { id: 'chat', label: t.liveChat, icon: <Bot className="w-4 h-4" /> },
+                { id: 'doubts', label: "AI Doubt Solver", icon: <HelpCircle className="w-4 h-4" /> },
                 { id: 'attendance', label: t.attendance, icon: <Clock className="w-4 h-4" /> }
               ].map((tab) => (
                 <button
@@ -961,91 +968,22 @@ export default function StudentDashboard() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px' }} className="modules-inner-grid">
                   
                   {/* Left Column: Flashcards */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <h4 style={{ fontSize: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <RotateCcw className="w-4 h-4 text-purple-500" />
-                        {t.flashcards}
-                      </h4>
-                      <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                        {t.masteredCount}: {masteredCards.size} / {localizedFlashcards.length}
-                      </span>
-                    </div>
-
-                    {/* Interactive 3D Card */}
-                    <div 
-                      className={`flip-card ${flipped ? 'flipped' : ''}`}
-                      onClick={() => setFlipped(!flipped)}
-                    >
-                      <div className="flip-card-inner">
-                        {/* Front Side */}
-                        <div className="flip-card-front">
-                          <span className="badge badge-purple" style={{ fontSize: '10px', marginBottom: '12px' }}>TERM</span>
-                          <h5 style={{ fontSize: '20px', fontWeight: 700 }}>{localizedFlashcards[activeCard]?.front}</h5>
-                          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '16px' }}>{t.cardFlipped}</p>
-                        </div>
-                        {/* Back Side */}
-                        <div className="flip-card-back">
-                          <span className="badge badge-orange" style={{ fontSize: '10px', marginBottom: '12px' }}>DEFINITION</span>
-                          <p style={{ fontSize: '14px', lineHeight: 1.5, fontWeight: 500 }}>{localizedFlashcards[activeCard]?.back}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Card controls */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button 
-                          className="btn btn-secondary" 
-                          style={{ padding: '8px 12px' }}
-                          disabled={activeCard === 0}
-                          onClick={() => { setFlipped(false); setActiveCard(prev => Math.max(0, prev - 1)); }}
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                          <span>{t.previous}</span>
-                        </button>
-                        <button 
-                          className="btn btn-secondary" 
-                          style={{ padding: '8px 12px' }}
-                          disabled={activeCard === localizedFlashcards.length - 1}
-                          onClick={() => { setFlipped(false); setActiveCard(prev => Math.min(localizedFlashcards.length - 1, prev + 1)); }}
-                        >
-                          <span>{t.next}</span>
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      <button 
-                        className={`btn ${masteredCards.has(activeCard) ? 'btn-secondary' : 'btn-primary'}`}
-                        style={{ padding: '8px 16px', fontSize: '13px' }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          markFlashcardAsMastered(activeCard);
-                        }}
-                      >
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>{masteredCards.has(activeCard) ? t.mastered : t.markMastered}</span>
-                      </button>
-                    </div>
-                  </div>
+                  <FlashcardContainer 
+                    localizedFlashcards={localizedFlashcards}
+                    activeCard={activeCard}
+                    setActiveCard={setActiveCard}
+                    flipped={flipped}
+                    setFlipped={setFlipped}
+                    masteredCards={masteredCards}
+                    onMarkMastered={markFlashcardAsMastered}
+                    t={t}
+                  />
 
                   {/* Right Column: Key Equations */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <h4 style={{ fontSize: '16px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Volume2 className="w-4 h-4 text-cyan-500" />
-                      {t.formulas}
-                    </h4>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '250px', overflowY: 'auto' }} className="custom-scrollbar">
-                      {localizedFormulas.map((f, i) => (
-                        <div key={i} className="card" style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.01)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent-orange)' }}>{f.name}</span>
-                          <code style={{ fontSize: '14px', fontFamily: 'monospace', color: '#FFF', fontWeight: 'bold', background: 'rgba(0,0,0,0.2)', padding: '4px 8px', borderRadius: '4px', alignSelf: 'flex-start' }}>{f.eq}</code>
-                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{f.desc}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  <FormulaSheetDrawer 
+                    localizedFormulas={localizedFormulas}
+                    t={t}
+                  />
 
                 </div>
 
@@ -1179,71 +1117,13 @@ export default function StudentDashboard() {
                     </div>
 
                     {/* Dynamic Certificate SVG Drawer (Only if Unlocked) */}
-                    {certUnlocked && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
-                        <h4 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--accent-green)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                          Certificate Unlocked & Ready
-                        </h4>
-                        
-                        {/* Interactive Certificate Viewport */}
-                        <div style={{ width: '100%', maxWidth: '650px', border: '1px solid var(--border-color)', borderRadius: '12px', overflow: 'hidden' }}>
-                          <svg id="certificate-svg" viewBox="0 0 800 600" width="100%" style={{ backgroundColor: '#0b0a1d', display: 'block', border: '4px solid #d4af37' }}>
-                            <rect x="20" y="20" width="760" height="560" fill="none" stroke="#d4af37" strokeWidth="2" opacity="0.6"/>
-                            <rect x="25" y="25" width="750" height="550" fill="none" stroke="#d4af37" strokeWidth="1" strokeDasharray="10 5" opacity="0.4"/>
-                            
-                            <path d="M 20 50 L 50 20 M 20 70 L 70 20" stroke="#d4af37" strokeWidth="2" fill="none" opacity="0.7"/>
-                            <path d="M 780 50 L 750 20 M 780 70 L 730 20" stroke="#d4af37" strokeWidth="2" fill="none" opacity="0.7"/>
-                            <path d="M 20 550 L 50 580 M 20 530 L 70 580" stroke="#d4af37" strokeWidth="2" fill="none" opacity="0.7"/>
-                            <path d="M 780 550 L 750 580 M 780 530 L 730 580" stroke="#d4af37" strokeWidth="2" fill="none" opacity="0.7"/>
-                            
-                            <circle cx="400" cy="300" r="220" fill="url(#gold-glow)" opacity="0.15"/>
-                            
-                            <defs>
-                              <radialGradient id="gold-glow" cx="50%" cy="50%" r="50%">
-                                <stop offset="0%" stopColor="#FFD700" />
-                                <stop offset="100%" stopColor="#0b0a1d" stopOpacity="0" />
-                              </radialGradient>
-                              <linearGradient id="gold-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stopColor="#BF953F" />
-                                <stop offset="25%" stopColor="#FCF6BA" />
-                                <stop offset="50%" stopColor="#B38728" />
-                                <stop offset="75%" stopColor="#FBF5B7" />
-                                <stop offset="100%" stopColor="#AA771C" />
-                              </linearGradient>
-                            </defs>
-
-                            <text x="400" y="90" textAnchor="middle" fill="url(#gold-gradient)" fontSize="26" fontWeight="800" letterSpacing="4">FUELUP EDUCATION</text>
-                            <text x="400" y="115" textAnchor="middle" fill="#94A3B8" fontSize="11" letterSpacing="6">WORLD-CLASS EDUCATION HUB</text>
-                            <line x1="280" y1="130" x2="520" y2="130" stroke="url(#gold-gradient)" strokeWidth="1.5" opacity="0.5"/>
-                            
-                            <text x="400" y="195" textAnchor="middle" fill="#F8FAFC" fontSize="34" fontWeight="700">{t.passingCert.toUpperCase()}</text>
-                            <text x="400" y="230" textAnchor="middle" fill="#94A3B8" fontSize="15" fontStyle="italic">This certificate is awarded to</text>
-                            
-                            <text x="400" y="295" textAnchor="middle" fill="url(#gold-gradient)" fontSize="40" fontWeight="800">{user ? user.name : 'Alex Carter'}</text>
-                            <line x1="220" y1="310" x2="580" y2="310" stroke="#94A3B8" strokeWidth="1" opacity="0.3"/>
-                            
-                            <text x="400" y="350" textAnchor="middle" fill="#F8FAFC" fontSize="15">{t.certificateDesc}</text>
-                            <text x="400" y="385" textAnchor="middle" fill="url(#gold-gradient)" fontSize="20" fontWeight="700">{t.certificateTitle}</text>
-                            <text x="400" y="415" textAnchor="middle" fill="#94A3B8" fontSize="13">Astrophysics Module I & II • Completed with Distinction</text>
-                            
-                            <text x="180" y="485" textAnchor="middle" fill="#94A3B8" fontSize="11" fontWeight="600">DATE</text>
-                            <text x="180" y="510" textAnchor="middle" fill="#F8FAFC" fontSize="13" fontWeight="700">May 30, 2026</text>
-                            <line x1="110" y1="495" x2="250" y2="495" stroke="#94A3B8" strokeWidth="0.5" opacity="0.3"/>
-                            
-                            <text x="620" y="485" textAnchor="middle" fill="#94A3B8" fontSize="11" fontWeight="600">{t.certificateVerification}</text>
-                            <text x="620" y="510" textAnchor="middle" fill="#F8FAFC" fontSize="12" fontFamily="monospace" fontWeight="700">{certId || "FE-ASTRO-9029X"}</text>
-                            <line x1="550" y1="495" x2="690" y2="495" stroke="#94A3B8" strokeWidth="0.5" opacity="0.3"/>
-                            
-                            <g transform="translate(365, 460)">
-                              <path d="M 40 0 L 47 18 L 65 9 L 58 27 L 76 27 L 58 37 L 69 52 L 50 49 L 45 67 L 35 52 L 21 61 L 22 43 L 4 38 L 20 30 L 11 14 L 28 17 Z" fill="#D4AF37" transform="scale(0.8) translate(5, 5)" opacity="0.95"/>
-                              <circle cx="40" cy="40" r="26" fill="#CF9E2E" stroke="#FCF6BA" strokeWidth="1.5"/>
-                              <text x="40" y="44" textAnchor="middle" fill="#0b0a1d" fontSize="9" fontWeight="800">GOLD</text>
-                            </g>
-                          </svg>
-                        </div>
-                      </div>
-                    )}
+                    <CertificateModal 
+                      certUnlocked={certUnlocked}
+                      user={user}
+                      certId={certId}
+                      t={t}
+                      onPrint={handlePrintCertificate}
+                    />
 
                   </div>
                 )}
@@ -1290,6 +1170,10 @@ export default function StudentDashboard() {
                   </button>
                 </form>
               </div>
+            )}
+
+            {currentTab === 'doubts' && (
+              <DoubtSolver currentLang={currentLang} t={t} />
             )}
 
             {currentTab === 'attendance' && (

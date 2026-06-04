@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fuelup-backend
+  namespace: production
+  labels:
+    app: fuelup-backend
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: fuelup-backend
+  template:
+    metadata:
+      labels:
+        app: fuelup-backend
+    spec:
+      containers:
+      - name: backend
+        image: 123456789012.dkr.ecr.us-east-1.amazonaws.com/fuelup-backend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: connection-string
+        resources:
+          limits:
+            cpu: "1"
+            memory: 1024Mi
+          requests:
+            cpu: "500m"
+            memory: 512Mi
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 5

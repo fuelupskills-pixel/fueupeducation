@@ -2,10 +2,13 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base
-from .routers import auth, courses, students, creators, ai
+from .routers import auth, courses, students, creators, ai, library
 
 # Create all database tables on startup
 Base.metadata.create_all(bind=engine)
+# Make sure library models are loaded by importing models explicitly to guarantee their schema creation
+from . import models
+
 
 app = FastAPI(
     title="FuelUp Education API",
@@ -34,6 +37,7 @@ app.include_router(courses.router, prefix="/api")
 app.include_router(students.router, prefix="/api")
 app.include_router(creators.router, prefix="/api")
 app.include_router(ai.router, prefix="/api")
+app.include_router(library.router, prefix="/api")
 
 @app.get("/")
 def read_root():

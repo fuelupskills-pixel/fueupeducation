@@ -121,3 +121,109 @@ class OTPVerification(Base):
     otp = Column(String, nullable=False)
     expires_at = Column(DateTime, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+# --- National Knowledge Library (NKL) Educational Hierarchy ---
+
+class Country(Base):
+    __tablename__ = "countries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, nullable=False)
+
+    states = relationship("State", back_populates="country")
+
+class State(Base):
+    __tablename__ = "states"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    country_id = Column(Integer, ForeignKey("countries.id"))
+
+    country = relationship("Country", back_populates="states")
+    boards = relationship("Board", back_populates="state")
+
+class Board(Base):
+    __tablename__ = "boards"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, nullable=False)
+    type = Column(String, default="school")  # school, university, competitive
+    state_id = Column(Integer, ForeignKey("states.id"), nullable=True)
+
+    state = relationship("State", back_populates="boards")
+    grades = relationship("GradeLevel", back_populates="board")
+
+class GradeLevel(Base):
+    __tablename__ = "grade_levels"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)  # Class 10, B.Tech Sem 1, PhD Core
+    board_id = Column(Integer, ForeignKey("boards.id"))
+
+    board = relationship("Board", back_populates="grades")
+    subjects = relationship("Subject", back_populates="grade")
+
+class Subject(Base):
+    __tablename__ = "subjects"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    grade_id = Column(Integer, ForeignKey("grade_levels.id"))
+
+    grade = relationship("GradeLevel", back_populates="subjects")
+    chapters = relationship("Chapter", back_populates="subject")
+
+class Chapter(Base):
+    __tablename__ = "chapters"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    chapter_order = Column(Integer, default=1)
+    subject_id = Column(Integer, ForeignKey("subjects.id"))
+
+    subject = relationship("Subject", back_populates="chapters")
+    topics = relationship("Topic", back_populates="chapter")
+
+class Topic(Base):
+    __tablename__ = "topics"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    chapter_id = Column(Integer, ForeignKey("chapters.id"))
+
+    chapter = relationship("Chapter", back_populates="topics")
+    learning_objects = relationship("LearningObject", back_populates="topic")
+
+class LearningObject(Base):
+    __tablename__ = "learning_objects"
+
+    id = Column(Integer, primary_key=True, index=True)
+    topic_id = Column(Integer, ForeignKey("topics.id"))
+    title = Column(String, nullable=False)
+    type = Column(String, nullable=False)  # Book, PDF, Video, Audio, Notes, Quiz, Research Paper, Slides
+    url = Column(String, nullable=False)
+    license_status = Column(String, default="Quarantined")  # Quarantined, Approved, Rejected
+    license_type = Column(String, default="CC-BY")
+    author = Column(String, nullable=True)
+    publisher = Column(String, nullable=True)
+    metadata_json = Column(Text, default="{}")
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    topic = relationship("Topic", back_populates="learning_objects")
+
+class StudentKnowledgeGraph(Base):
+    __tablename__ = "student_knowledge_graph"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("users.id"))
+    topic_id = Column(Integer, ForeignKey("topics.id"))
+    reading_progress = Column(Float, default=0.0)  # 0 to 100
+    video_progress = Column(Float, default=0.0)    # 0 to 100
+    quiz_score = Column(Float, default=0.0)        # 0 to 100
+    skill_level = Column(Float, default=0.0)       # 0.0 to 1.0 (calculated competence)
+    last_accessed = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+    student = relationship("User")
+    topic = relationship("Topic")
+

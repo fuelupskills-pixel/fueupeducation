@@ -7,6 +7,8 @@ RUN npm install
 
 COPY apps/web/next.config.js ./
 COPY apps/web/app ./app
+COPY apps/web/components ./components
+COPY apps/web/public ./public
 
 EXPOSE 3000
 

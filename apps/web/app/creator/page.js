@@ -6,6 +6,7 @@ import {
   ArrowLeft, Upload, BarChart2, PlusCircle, CheckCircle2, 
   Settings, Loader, Play, Sparkles, DollarSign, Eye, Film 
 } from 'lucide-react';
+import { API_URL } from '../config';
 
 export default function CreatorDashboard() {
   const router = useRouter();
@@ -42,7 +43,7 @@ export default function CreatorDashboard() {
     }
 
     // Verify token & role
-    fetch('http://127.0.0.1:8000/api/auth/me', {
+    fetch(`${API_URL}/api/auth/me`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -60,7 +61,7 @@ export default function CreatorDashboard() {
       setUser(profile);
       
       // Fetch stats
-      fetch('http://127.0.0.1:8000/api/creator/stats', {
+      fetch(`${API_URL}/api/creator/stats`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       .then(res => res.json())
@@ -71,7 +72,7 @@ export default function CreatorDashboard() {
       .catch(console.error);
 
       // Fetch courses
-      fetch('http://127.0.0.1:8000/api/creator/courses', {
+      fetch(`${API_URL}/api/creator/courses`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       .then(res => res.json())
@@ -106,7 +107,7 @@ export default function CreatorDashboard() {
     
     try {
       const token = localStorage.getItem('fuelup_token');
-      const response = await fetch('http://127.0.0.1:8000/api/courses/', {
+      const response = await fetch(`${API_URL}/api/courses/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -138,7 +139,7 @@ export default function CreatorDashboard() {
       setCourses(prev => [newCourse, ...prev]);
       
       // Update stats and payout in database by ₹10.00
-      const statsResponse = await fetch(`http://127.0.0.1:8000/api/creator/stats/simulate-earnings?views_add=0&revenue_add=10.00`, {
+      const statsResponse = await fetch(`${API_URL}/api/creator/stats/simulate-earnings?views_add=0&revenue_add=10.00`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -174,7 +175,7 @@ export default function CreatorDashboard() {
       const token = localStorage.getItem('fuelup_token');
       
       // 1. Create the Course first in the backend database
-      const courseResponse = await fetch('http://127.0.0.1:8000/api/courses/', {
+      const courseResponse = await fetch(`${API_URL}/api/courses/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -195,7 +196,7 @@ export default function CreatorDashboard() {
       const courseData = await courseResponse.json();
 
       // 2. Trigger the background video compiler pipeline
-      const aiResponse = await fetch('http://127.0.0.1:8000/api/ai/generate-video', {
+      const aiResponse = await fetch(`${API_URL}/api/ai/generate-video`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -251,7 +252,7 @@ export default function CreatorDashboard() {
         setCourses(prev => [newAiCourse, ...prev]);
         
         // Update stats and payout in database by ₹10.00
-        fetch(`http://127.0.0.1:8000/api/creator/stats/simulate-earnings?views_add=120&revenue_add=10.00`, {
+        fetch(`${API_URL}/api/creator/stats/simulate-earnings?views_add=120&revenue_add=10.00`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` }
         })

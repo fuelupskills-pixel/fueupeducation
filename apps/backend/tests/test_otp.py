@@ -10,6 +10,9 @@ os.environ["DATABASE_URL"] = "sqlite:///./test_fuelup.db"
 from app.database import Base, engine
 from app.main import app
 
+Base.metadata.drop_all(bind=engine)
+Base.metadata.create_all(bind=engine)
+
 client = TestClient(app)
 
 def test_otp_flow():

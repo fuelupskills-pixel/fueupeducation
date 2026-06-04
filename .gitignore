@@ -28,3 +28,6 @@ fuelup.db
 # OS files
 .DS_Store
 Thumbs.db
+
+# UI design assets
+ui design old/

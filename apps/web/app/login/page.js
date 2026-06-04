@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Key, Mail, Lock, Shield, Eye, EyeOff, Loader } from 'lucide-react';
+import { API_URL } from '../config';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -25,7 +26,7 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/auth/otp/send', {
+      const response = await fetch(`${API_URL}/api/auth/otp/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -55,7 +56,7 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/auth/otp/verify', {
+      const response = await fetch(`${API_URL}/api/auth/otp/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -80,7 +81,7 @@ export default function LoginPage() {
       localStorage.setItem('fuelup_email', email);
 
       // Verify profile via /me
-      const meResponse = await fetch('http://127.0.0.1:8000/api/auth/me', {
+      const meResponse = await fetch(`${API_URL}/api/auth/me`, {
         headers: {
           'Authorization': `Bearer ${data.access_token}`
         }
@@ -137,7 +138,7 @@ export default function LoginPage() {
 
       let data;
       try {
-        const response = await fetch('http://127.0.0.1:8000/api/auth/login', {
+        const response = await fetch(`${API_URL}/api/auth/login`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
@@ -171,7 +172,7 @@ export default function LoginPage() {
       // Verify profile and roles via /me endpoint if using actual backend token
       if (data.access_token && !data.access_token.startsWith("mock-")) {
         try {
-          const meResponse = await fetch('http://127.0.0.1:8000/api/auth/me', {
+          const meResponse = await fetch(`${API_URL}/api/auth/me`, {
             headers: {
               'Authorization': `Bearer ${data.access_token}`
             }

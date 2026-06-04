@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, Text, View, TextInput, TouchableOpacity, 
   ScrollView, SafeAreaView, StatusBar, Alert 
 } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
+import { API_URL } from './config';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<'login' | 'register' | 'dashboard'>('login');
@@ -22,6 +24,32 @@ export default function App() {
   // Dashboard state
   const [markedCount, setMarkedCount] = useState(0);
 
+  // Dynamic session loader on startup
+  useEffect(() => {
+    const checkPersistedSession = async () => {
+      try {
+        const token = await SecureStore.getItemAsync('fuelup_auth_token');
+        if (token) {
+          const response = await fetch(`${API_URL}/api/auth/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (response.ok) {
+            const profile = await response.json();
+            setName(profile.name);
+            setRole(profile.role || 'student');
+            setCurrentScreen('dashboard');
+          } else {
+            // Token expired or invalid, clear it
+            await SecureStore.deleteItemAsync('fuelup_auth_token');
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to restore session from SecureStore:", err);
+      }
+    };
+    checkPersistedSession();
+  }, []);
+
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
       Alert.alert("Error", "Please fill in all credentials.");
@@ -38,25 +66,13 @@ export default function App() {
         .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(details[key as keyof typeof details]))
         .join('&');
 
-      let response;
-      try {
-        response = await fetch('http://localhost:8000/api/auth/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-          },
-          body: formBody
-        });
-      } catch (err) {
-        // Fallback for Android Emulator
-        response = await fetch('http://10.0.2.2:8000/api/auth/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-          },
-          body: formBody
-        });
-      }
+      const response = await fetch(`${API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+        },
+        body: formBody
+      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -64,18 +80,11 @@ export default function App() {
       }
 
       const data = await response.json();
+      await SecureStore.setItemAsync('fuelup_auth_token', data.access_token);
       
-      let profileResponse;
-      try {
-        profileResponse = await fetch('http://localhost:8000/api/auth/me', {
-          headers: { 'Authorization': `Bearer ${data.access_token}` }
-        });
-      } catch (err) {
-        // Fallback for Android Emulator
-        profileResponse = await fetch('http://10.0.2.2:8000/api/auth/me', {
-          headers: { 'Authorization': `Bearer ${data.access_token}` }
-        });
-      }
+      const profileResponse = await fetch(`${API_URL}/api/auth/me`, {
+        headers: { 'Authorization': `Bearer ${data.access_token}` }
+      });
 
       if (!profileResponse.ok) {
         throw new Error('Failed to retrieve user profile credentials');
@@ -97,21 +106,11 @@ export default function App() {
     }
 
     try {
-      let response;
-      const bodyPayload = JSON.stringify({ email: email });
-      try {
-        response = await fetch('http://localhost:8000/api/auth/otp/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: bodyPayload
-        });
-      } catch (err) {
-        response = await fetch('http://10.0.2.2:8000/api/auth/otp/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: bodyPayload
-        });
-      }
+      const response = await fetch(`${API_URL}/api/auth/otp/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email })
+      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -132,25 +131,15 @@ export default function App() {
     }
 
     try {
-      let response;
-      const bodyPayload = JSON.stringify({
-        email: email,
-        otp: otpCode,
-        role: role
+      const response = await fetch(`${API_URL}/api/auth/otp/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email,
+          otp: otpCode,
+          role: role
+        })
       });
-      try {
-        response = await fetch('http://localhost:8000/api/auth/otp/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: bodyPayload
-        });
-      } catch (err) {
-        response = await fetch('http://10.0.2.2:8000/api/auth/otp/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: bodyPayload
-        });
-      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -158,17 +147,11 @@ export default function App() {
       }
 
       const data = await response.json();
+      await SecureStore.setItemAsync('fuelup_auth_token', data.access_token);
       
-      let profileResponse;
-      try {
-        profileResponse = await fetch('http://localhost:8000/api/auth/me', {
-          headers: { 'Authorization': `Bearer ${data.access_token}` }
-        });
-      } catch (err) {
-        profileResponse = await fetch('http://10.0.2.2:8000/api/auth/me', {
-          headers: { 'Authorization': `Bearer ${data.access_token}` }
-        });
-      }
+      const profileResponse = await fetch(`${API_URL}/api/auth/me`, {
+        headers: { 'Authorization': `Bearer ${data.access_token}` }
+      });
 
       if (!profileResponse.ok) {
         throw new Error('Failed to retrieve user profile credentials');
@@ -194,32 +177,18 @@ export default function App() {
     }
 
     try {
-      const bodyPayload = JSON.stringify({
-        name: name,
-        email: email,
-        password: password,
-        role: role
+      const response = await fetch(`${API_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: name,
+          email: email,
+          password: password,
+          role: role
+        })
       });
-
-      let response;
-      try {
-        response = await fetch('http://localhost:8000/api/auth/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: bodyPayload
-        });
-      } catch (err) {
-        // Fallback for Android Emulator
-        response = await fetch('http://10.0.2.2:8000/api/auth/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: bodyPayload
-        });
-      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -233,6 +202,21 @@ export default function App() {
       setConfirmPassword("");
     } catch (err: any) {
       Alert.alert("Registration Failed", err.message || "Unable to register at this time.");
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await SecureStore.deleteItemAsync('fuelup_auth_token');
+      setCurrentScreen('login');
+      setMarkedCount(0);
+      setName("");
+      setEmail("");
+      setPassword("");
+      setOtpSent(false);
+      setOtpCode("");
+    } catch (err) {
+      console.warn("Error signing out:", err);
     }
   };
 
@@ -443,7 +427,7 @@ export default function App() {
           <View style={styles.card}>
             <View style={styles.dashboardHeader}>
               <Text style={styles.cardTag}>WELCOME BACK {name ? name.toUpperCase() : ""}</Text>
-              <TouchableOpacity onPress={() => { setCurrentScreen('login'); setMarkedCount(0); }}>
+              <TouchableOpacity onPress={handleSignOut}>
                 <Text style={styles.logoutText}>Sign Out</Text>
               </TouchableOpacity>
             </View>
@@ -473,7 +457,7 @@ export default function App() {
           <Text style={styles.statusTitle}>Network Synchronizer Status</Text>
           <View style={styles.statusIndicatorRow}>
             <View style={styles.greenCircle} />
-            <Text style={styles.statusText}>Connected to api.fuelupeducation.com</Text>
+            <Text style={styles.statusText}>Sync Endpoint: {API_URL}</Text>
           </View>
         </View>
 

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, UserPlus, Mail, Lock, User, Shield, Loader } from 'lucide-react';
+import { API_URL } from '../config';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -29,7 +30,7 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/auth/otp/send', {
+      const response = await fetch(`${API_URL}/api/auth/otp/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -59,7 +60,7 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/auth/otp/verify', {
+      const response = await fetch(`${API_URL}/api/auth/otp/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
