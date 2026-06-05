@@ -26,16 +26,16 @@ jobs:
 
     - name: Build Web Frontend (Static Export)
       env:
-        NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+        NEXT_PUBLIC_API_URL: "http://89.116.133.132:8000"
       run: |
         npm run build -w web-frontend
 
     - name: FTP Deploy Static Assets to Hostinger
       uses: SamKirkland/FTP-Deploy-Action@v4.3.4
       with:
-        server: ${{ secrets.FTP_SERVER }}
-        username: ${{ secrets.FTP_USERNAME }}
-        password: ${{ secrets.FTP_PASSWORD }}
+        server: "89.116.133.132"
+        username: "u505146222.fuelupeducation.com"
+        password: "Fuelup@786"
         local-dir: apps/web/out/
         server-dir: ./
         danger-clean-slate: false
