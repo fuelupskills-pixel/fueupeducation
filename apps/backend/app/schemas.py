@@ -154,3 +154,4 @@ class OTPVerify(BaseModel):
     otp: str
     name: Optional[str] = None
     role: str = "student" # student, creator, admin
+    password: Optional[str] = None

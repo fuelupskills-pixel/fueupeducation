@@ -59,7 +59,7 @@ from datetime import datetime, timedelta
 def send_otp(request: schemas.OTPSend, db: Session = Depends(database.get_db)):
     # Generate 6-digit OTP code
     otp_code = f"{random.randint(100000, 999999)}"
-    expires_at = datetime.utcnow() + timedelta(minutes=5)
+    expires_at = datetime.utcnow() + timedelta(minutes=15)
     
     # Store in database
     otp_record = models.OTPVerification(
@@ -103,14 +103,17 @@ def verify_otp(request: schemas.OTPVerify, db: Session = Depends(database.get_db
     
     if not user:
         # Sign up user automatically on-the-fly
-        # Hash a dummy password since passwordless OTP doesn't use it, but password column is non-nullable
-        dummy_password = auth.get_password_hash(f"dummy-{random.randint(1000000, 9999999)}")
+        # Hash the password if provided, otherwise a dummy password
+        if request.password:
+            password_hash = auth.get_password_hash(request.password)
+        else:
+            password_hash = auth.get_password_hash(f"dummy-{random.randint(1000000, 9999999)}")
         display_name = request.name if request.name else request.email.split('@')[0]
         
         user = models.User(
             email=request.email,
             name=display_name,
-            password_hash=dummy_password,
+            password_hash=password_hash,
             role=request.role
         )
         db.add(user)

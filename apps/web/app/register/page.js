@@ -69,7 +69,8 @@ export default function RegisterPage() {
           email: email,
           otp: otpCode,
           name: name,
-          role: role
+          role: role,
+          password: password
         })
       });
 

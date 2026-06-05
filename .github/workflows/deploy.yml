@@ -26,7 +26,7 @@ jobs:
 
     - name: Build Web Frontend (Static Export)
       env:
-        NEXT_PUBLIC_API_URL: "http://89.116.133.132:8000"
+        NEXT_PUBLIC_API_URL: "http://localhost:8000"
       run: |
         npm run build -w web-frontend
 
