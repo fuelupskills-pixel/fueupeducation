@@ -12,10 +12,25 @@ REMOTE_ROOT = "/public_html"
 
 def run_build():
     print("--- 1. Building Next.js Web Frontend Statically ---")
-    # Set the target API URL for build. Since the backend runs locally on the user's computer, 
-    # the frontend calls http://localhost:8000.
+    api_url = "http://localhost:8000"
+    
+    # Try to read localtunnel URL if it is running
+    log_path = os.path.join("scratch", "localtunnel.log")
+    if os.path.exists(log_path):
+        try:
+            with open(log_path, "r", encoding="utf-8") as f:
+                content = f.read()
+                for line in content.splitlines():
+                    if "your url is:" in line:
+                        api_url = line.split("your url is:")[-1].strip()
+                        print(f"Detected active localtunnel secure URL: {api_url}")
+                        break
+        except Exception as e:
+            print("Failed to read localtunnel log, using default:", e)
+            
+    print(f"Building frontend with NEXT_PUBLIC_API_URL = {api_url}")
     env = os.environ.copy()
-    env["NEXT_PUBLIC_API_URL"] = "http://localhost:8000"
+    env["NEXT_PUBLIC_API_URL"] = api_url
     
     result = subprocess.run(
         ["npm", "run", "build", "-w", "web-frontend"],

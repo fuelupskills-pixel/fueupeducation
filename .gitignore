@@ -31,3 +31,6 @@ Thumbs.db
 
 # UI design assets
 ui design old/
+
+# Scratch logs
+scratch/*.log
